@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+tests/fixtures/out/
+*.skill
+demo-ws/
+exam-prep/
+# local editor and agent settings
+.claude/
+# trial workspaces and downloaded books: they hold the books' text, and some books are copyrighted
+trials/*/
+!trials/corpus/
+trials/corpus/*.pdf
+trials/corpus/*.part

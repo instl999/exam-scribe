@@ -1,0 +1,45 @@
+{
+  "skill_name": "exam-scribe",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a chemistry exam on 2026-12-15 (multiple choice and calculation problems, closed book). The textbook is evals/files/sample-textbook.pdf. Please make me study notes for chapter 2 that I can actually trust, plus practice questions. I can study about 2 hours a day. You decide anything else.",
+      "expected_output": "A workspace where chapter 2 has passed every writer and checker task; site/ch02.html with recall-mode notes, cited claims and verified self-test questions; a verification report; the notes never contain claims without book citations.",
+      "files": ["evals/files/sample-textbook.pdf"],
+      "expectations": [
+        "The agent ran the ExamScribe loop (init, ingest, next/check) instead of writing notes freehand",
+        "scope.chapters was set to ch02 and exam.formats includes mcq and problems",
+        "Every section draft of chapter 2 passed check (no <<FILL placeholders remain in chapters/ch02/draft)",
+        "Verification worksheets for ch02 were completed and verdicts.json records at least one caught canary per claim batch",
+        "site/ch02.html exists and every claim-bearing field shows a page citation",
+        "The final message to the user gives the path of the notes and reports how many items are marked for checking"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "quiz me on the energy chapter of evals/files/sample-textbook.pdf - my test is next friday, it's just multiple choice. make flashcards too pls",
+      "expected_output": "Chapter 1 notes with verified multiple-choice questions, an Anki deck in export/, and a study calendar counting back to the test date.",
+      "files": ["evals/files/sample-textbook.pdf"],
+      "expectations": [
+        "The agent asked or inferred the exam date and set exam.formats to mcq",
+        "export/flashcards.apkg or export/flashcards.tsv exists and contains cards from chapter 1",
+        "Every mcq question in the chapter 1 drafts has four options and a why-not line for each wrong option",
+        "Blind-solve worksheets were completed for chapter 1 before the questions appear in practice sets",
+        "export/study-plan.ics exists with review sessions before the exam date"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Here's my textbook (evals/files/sample-textbook.pdf). I'm running you on a small local model setup, so be extra careful. Do chapter 1 only, notes in English, exam is open book with short answers.",
+      "expected_output": "Tier strict is kept; chapter 1 is processed section by section; the open-book lookup index is built; items the writer could not support are marked UNSURE instead of guessed.",
+      "files": ["evals/files/sample-textbook.pdf"],
+      "expectations": [
+        "The workspace tier is strict",
+        "exam.book_policy is open and site/lookup.html exists after the build",
+        "Writing tasks were done one section at a time (separate drafts for 1.1 and 1.2)",
+        "No draft contains a trust mark character typed by the model (checkmark, warning sign or light bulb)",
+        "The verification report lists any UNSURE fields rather than hiding them"
+      ]
+    }
+  ]
+}
