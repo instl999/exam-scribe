@@ -84,8 +84,8 @@ OCR 只用于扫描件和损坏的文字层；它会等考试信息问答（inta
 
 ## 安装技能
 
-- **Claude Code：** 把 `exam-scribe/` 复制到 `~/.claude/skills/exam-scribe/`（所有项目可用）或 `<项目>/.claude/skills/exam-scribe/`（单个项目）。
-- **Claude 应用：** 上传打包好的 `exam-scribe.skill` 文件（即 `exam-scribe/` 文件夹的 zip 压缩包）。
+- **Claude Code**：把 `exam-scribe/` 复制到 `~/.claude/skills/exam-scribe/`（所有项目可用）或 `<项目>/.claude/skills/exam-scribe/`（单个项目）。
+- **Claude 应用**：上传打包好的 `exam-scribe.skill` 文件（即 `exam-scribe/` 文件夹的 zip 压缩包）。
 - **其他支持 Agent Skills 的智能体**（技能是一个包含 `SKILL.md` 的文件夹）：把文件夹放到该智能体加载技能的位置。任何能运行 Python 的智能体也可以直接按照 `SKILL.md` 操作。
 
 然后这样提问即可：*"这是我的化学课本，12 月 15 日考试，帮我做第 2 到第 4 章的学习笔记。"*
