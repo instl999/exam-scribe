@@ -156,7 +156,7 @@ class CardTests(unittest.TestCase):
 class QuoteLengthTests(unittest.TestCase):
     def test_short_but_identifying_cjk_quotes_are_long_enough(self):
         from examscribe_lib.citations import quote_long_enough
-        self.assertTrue(quote_long_enough("传播学又是一门交叉学科"))      # 10 characters
+        self.assertTrue(quote_long_enough("细胞是生物体的基本单位"))      # 11 characters
         self.assertTrue(quote_long_enough("情報社会の問題解決"))
         self.assertFalse(quote_long_enough("交叉学科"))                   # 4 characters identify nothing
         self.assertFalse(quote_long_enough("energy is work"))

@@ -36,7 +36,7 @@
   "scripts/examscribe_lib/anki.py": "122840cd951a9319087722612b7be4a972c7ab6d3ba79c4f40826873b4a060e4",
   "scripts/examscribe_lib/build.py": "1a8c9637df3f5ce9c5d5ca5d954fb2adae2922a6e1d54ca0b31b3bf9be3ce4fc",
   "scripts/examscribe_lib/calc.py": "71da560ceee7afa59059c2b497c4f394d2760e44a3e228d70f4754724950911a",
-  "scripts/examscribe_lib/citations.py": "a9a699767a80c20b934b880d912c322222811baeb481a2d146fe82af01236c80",
+  "scripts/examscribe_lib/citations.py": "2fa4f89bf760c2c57b10f3c5ef739b311ba1e738674856b517c2e028530dcc91",
   "scripts/examscribe_lib/common.py": "10ad0023c48d2da4c47b90728cadcc51e5e0a13905e069fd24888c2bc20fb095",
   "scripts/examscribe_lib/config.py": "6632e167fba016ca5bcdaf8e1aaa326411bebad7e798488ed32293130e97a150",
   "scripts/examscribe_lib/esm.py": "f65a095d65a6374bcdfd26907655d65b4d982f862e66021b7c14436f1ef93f56",

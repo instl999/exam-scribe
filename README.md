@@ -156,7 +156,7 @@ that takes, and which shortcuts they try. These guardrails are aimed at the ones
   could otherwise spin forever inside Codex's sandbox).
 
 Tips: keep the `strict` tier; in Codex the default `workspace-write` sandbox works when the workspace is inside the
-project folder; installing packages and `ocr-setup` need network once. A full run with a GPT model in Codex is
+project folder; installing packages and `ocr-setup` need network once. Runs with a GPT model in Codex are
 described in [docs/EVALUATION.md](docs/EVALUATION.md).
 
 ## How it works

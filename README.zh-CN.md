@@ -110,7 +110,7 @@ ExamScribe 是标准的 Agent Skill（一个包含 `SKILL.md` 的文件夹），
 - 每条命令运行前，技能都会把自身文件与 `scripts/integrity.json` 比对，并把工作区记录与脚本写入的内容比对；发现手动改动时停止工作，直到 `restore` 恢复记录，核实报告也会列出这次事件；
 - 沙箱禁止的写入会立即失败并给出清楚的提示（在 Windows 上，Python 的临时文件机制在 Codex 沙箱中原本可能无限空转）。
 
-建议：保持 `strict` 级别；在 Codex 中，只要工作区位于项目文件夹内，默认的 `workspace-write` 沙箱即可正常工作；安装依赖包和 `ocr-setup` 需要联网一次。用 GPT 模型在 Codex 中完整运行的结果见 [docs/EVALUATION.zh-CN.md](docs/EVALUATION.zh-CN.md)。
+建议：保持 `strict` 级别；在 Codex 中，只要工作区位于项目文件夹内，默认的 `workspace-write` 沙箱即可正常工作；安装依赖包和 `ocr-setup` 需要联网一次。用 GPT 模型在 Codex 中运行的情况见 [docs/EVALUATION.zh-CN.md](docs/EVALUATION.zh-CN.md)。
 
 ## 工作原理
 

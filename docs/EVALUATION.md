@@ -188,8 +188,6 @@ skill. Files are now created directly, so a forbidden write fails at once, and a
 a clear instruction instead of a traceback. Checked inside Codex's real sandbox: read-only mode now prints the
 instruction; `workspace-write` finishes OCR and skips the speed record.
 
-GPT_TRIAL_RESULTS_EN
-
 ## 4. Skill-creator evals (with-skill vs. baseline)
 
 `exam-scribe/evals/evals.json` holds three realistic prompts with checkable expectations, using the sample

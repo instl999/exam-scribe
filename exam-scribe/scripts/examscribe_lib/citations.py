@@ -26,7 +26,7 @@ ID_REF = re.compile(r"\b(?:T|EQ|WE|FIG|TAB|LO|SUM|Q|CMP|PR|TL|CAUSE|RU|TR|OUT)-[
 def quote_long_enough(quote: str, min_words: int = 4) -> bool:
     """Long enough to identify one place in the book: min_words words, where a Chinese/Japanese/Korean character
     counts as half a word, and at least 12 letters (8 characters for text that is mostly CJK, whose characters
-    carry more than letters do: "传播学又是一门交叉学科" is plenty)."""
+    carry more than letters do: "细胞是生物体的基本单位" is plenty)."""
     qkey = key_of(quote)
     cjk = len(_CJK_RE.findall(quote))
     min_key = 8 if cjk * 2 >= len(qkey) > 0 else 12
