@@ -205,7 +205,8 @@ def make_section_draft(ws: Workspace, ch: dict, part: dict, tier: dict) -> tuple
     out = ["# " + ch["title"] + " — " + part["id"] + " " + part["title"],
            "<!-- ExamScribe draft. Chapter " + ch["id"] + ", section part " + part["id"] + ", pages " + first +
            "–" + last + ". Source: chapters/" + ch["id"] + "/source/" + part["id"] + ".md -->",
-           "<!-- Replace every <<FILL ...>>. Delete <<OPTIONAL ...>> lines you do not use. Keep every ::: line and ID. -->",
+           # (no "<<FILL" in this line: the placeholder check would flag the instruction itself)
+           "<!-- Replace every FILL placeholder. Delete OPTIONAL lines you do not use. Keep every ::: line and ID. -->",
            "<!-- Cite as " + CITE + " using the page marker above the words in the source file. -->",
            "<!-- If the book does not say something, write UNSURE: <reason> instead of guessing. -->", ""]
     if lang_differs:

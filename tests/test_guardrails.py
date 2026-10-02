@@ -163,6 +163,23 @@ class QuoteLengthTests(unittest.TestCase):
         self.assertTrue(quote_long_enough("energy is the capacity"))
 
 
+class SkeletonTests(unittest.TestCase):
+    def test_instruction_comments_are_not_placeholders(self):
+        # the draft's own instructions must not trip the unfilled-placeholder check (every model hit it)
+        import re
+        from examscribe_lib.esm import PLACEHOLDER_RE
+        from examscribe_lib.pipeline import compute_next
+        ws = helpers.new_workspace()
+        try:
+            text = compute_next(ws).edit.read_text(encoding="utf-8")
+            comments = [line for line in text.splitlines() if line.strip().startswith("<!--")]
+            self.assertTrue(comments)
+            self.assertFalse([c for c in comments if PLACEHOLDER_RE.search(c)])
+            self.assertTrue(re.search(r"<<FILL", text))          # the fields themselves still have placeholders
+        finally:
+            helpers.cleanup(ws)
+
+
 class UntouchedDraftTests(unittest.TestCase):
     def test_check_on_the_untouched_draft_costs_no_attempt(self):
         from examscribe_lib.pipeline import check, compute_next

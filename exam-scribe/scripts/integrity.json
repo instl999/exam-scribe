@@ -62,7 +62,7 @@
   "scripts/examscribe_lib/render.py": "17233d6c9ac4411617dcae0372024efd721f546b5b026f71d5969d90416ae8c4",
   "scripts/examscribe_lib/report.py": "f632fd028934ab7dc919d07fa9e64993e417e8615404ec0ac096a842ca0403b2",
   "scripts/examscribe_lib/schema.py": "dcb350d01a9cdd05769062558c97db24c9e690638da5853364e396613710d4a9",
-  "scripts/examscribe_lib/skeleton.py": "36dd46fcdc1a0f86e140d88d5b78e75deb670b84cbe9209af812fdd6d7ac3017",
+  "scripts/examscribe_lib/skeleton.py": "0bad1de3ee698a7ba512a02bae240468235577fea06660c4b59027e3e1a32c2e",
   "scripts/examscribe_lib/studyplan.py": "edf90f427d7b075c06edb97102b73ea64d0b8226bc57e9e8608c8be3a819bd42",
   "scripts/examscribe_lib/tiers.py": "7e8602347fb493d9f3b954c1e04160decda5c1a096e118327c1a3e6a28281bff",
   "scripts/examscribe_lib/ui.py": "47a9f20aaa5cc6b179f29eb6e1713a2d14fe7f5f0adf0211b77e8365f284ab0f",
