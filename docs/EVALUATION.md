@@ -188,6 +188,25 @@ skill. Files are now created directly, so a forbidden write fails at once, and a
 a clear instruction instead of a traceback. Checked inside Codex's real sandbox: read-only mode now prints the
 instruction; `workspace-write` finishes OCR and skips the speed record.
 
+The second run, on the fixed skill, was cut short after 43 minutes by the account's Codex usage limit, at claim
+worksheet 6 of 9. Up to there:
+
+| Step | Result |
+|---|---|
+| OCR of 16 pages inside the sandbox | finished (about 50 s per page on this 2-core VM; 19 s outside the sandbox) |
+| chapter list | right: chapter 1, its three sections and the end-of-chapter questions; the model also reported a stray "?" that OCR put into a section title |
+| writing: 7 section cards and the chapter blocks | all passed. Three check FAILs in all: a check run on the untouched draft (now answered "NOT STARTED" without using an attempt), quotes of 10-11 Chinese characters rejected as too short (now accepted: 8 characters are enough when the text is mostly Chinese or Japanese), and a definition quote that did not name its term |
+| claim checks | 60 of 103 claims judged in 5 worksheets by a Codex sub-agent (the card's fresh-context rule): 58 supported, 2 partial, both real (a definition missing the book's qualifier, an explanation listing a feature its context does not mention) |
+| planted false claims | 15 of 15 caught; no worksheet redone |
+| hand audit of 20 checker-verified claims | 20 right (Haiku: 18 of 20) |
+| shortcuts | none: every edit through the file tool, no fill-in programs, no stop by the integrity guard; the checker sub-agent opened only its worksheets |
+| tokens | main agent 5.7 million input (97% cached) and 27 thousand output; checker 0.8 million input |
+
+Where the book gives no real definition (社会关系), the model marked it UNSURE instead of passing off a nearby
+sentence as one. Not reached before the limit: claim worksheets 6-9, blind solving of the answer keys,
+reconciling, fixes and the build. For comparison, Haiku needed six sessions for the whole chapter; this run reached
+the claim checks in one.
+
 ## 4. Skill-creator evals (with-skill vs. baseline)
 
 `exam-scribe/evals/evals.json` holds three realistic prompts with checkable expectations, using the sample
