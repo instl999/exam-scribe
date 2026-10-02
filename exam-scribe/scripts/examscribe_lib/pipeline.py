@@ -172,6 +172,7 @@ def _parts(ws: Workspace, ch: dict) -> list[dict]:
             write_text(src, source)
             if not dft.exists():
                 write_text(dft, text)
+                cs.setdefault("skeletons", {})[pt["id"]] = file_hash(dft)
             cs["parts"].append({"id": pt["id"], "title": pt["title"], "tokens": estimate_tokens(source)})
             cs["expected"][pt["id"]] = expected
         ws.save_state()
@@ -197,6 +198,7 @@ def _chapter_draft(ws: Workspace, ch: dict) -> Path:
         write_text(ws.chapter_dir(ch["id"]) / "source" / "chapter.md", source)
         if not path.exists():
             write_text(path, text)
+            cs.setdefault("skeletons", {})["chapter"] = file_hash(path)
         cs["chapter_expected"] = expected
         ws.save_state()
     return path
@@ -707,6 +709,8 @@ def restore_draft(ws: Workspace) -> str:
     if path.exists():
         shutil.copyfile(path, backup)
     write_text(path, text)
+    _cs(ws, task.chapter).setdefault("skeletons", {})[
+        "chapter" if task.kind == "write-chapter" else task.extra["part"]] = file_hash(path)
     restores = ws.state.setdefault("restores", {})
     if not restores.get(task.id):                    # the first restore gives the fresh draft fresh attempts
         ws.state.setdefault("attempts", {}).pop(task.id, None)
@@ -722,6 +726,12 @@ def _check_write(ws: Workspace, task: Task, accept_flags: bool) -> CheckResult:
     cs = _cs(ws, cid)
     tier = tier_params(ws.tier)
     path = task.edit
+    skeleton = cs.get("skeletons", {}).get("chapter" if task.kind == "write-chapter" else task.extra.get("part"))
+    if skeleton and file_hash(path) == skeleton:
+        # agents often run check to move on before opening the draft: that is not a failed attempt
+        return CheckResult(False, f"NOT STARTED — {path} is still the draft the script made. Fill it in with your "
+                                  "file-editing tool first; this check did not use an attempt.\n\n" +
+                           render_card(ws, task))
     text = read_text(path)
     damage = draft_damage(text)
     if damage:

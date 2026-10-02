@@ -127,7 +127,7 @@ Download or clone this repository, then:
 
 | Agent | How |
 |---|---|
-| **Codex** (CLI, IDE, app) | `python install.py --codex` copies the skill to `~/.agents/skills/exam-scribe/` (all projects); add `--project <folder>` for `<folder>/.agents/skills/` (one project). Then type `$exam-scribe` or just describe the task |
+| **Codex** (CLI, IDE, app) | ask Codex: `$skill-installer install https://github.com/instl999/exam-scribe/tree/main/exam-scribe` (it downloads the skill into `~/.codex/skills/`), or run `python install.py --codex` (copies it to `~/.agents/skills/exam-scribe/`; add `--project <folder>` for one project). Then type `$exam-scribe` or just describe the task |
 | **Claude Code** | `python install.py --claude` (`~/.claude/skills/exam-scribe/`), or with `--project <folder>` |
 | **Claude apps** (claude.ai, desktop) | upload `exam-scribe.skill` from the [latest release](https://github.com/instl999/exam-scribe/releases/latest) |
 | **Other agents** | `python install.py --dest <the agent's skills folder>`, or let the agent read `exam-scribe/SKILL.md` |

@@ -92,7 +92,7 @@ ExamScribe 是标准的 Agent Skill（一个包含 `SKILL.md` 的文件夹），
 
 | 智能体 | 方法 |
 |---|---|
-| **Codex**（命令行、IDE、应用） | `python install.py --codex` 把技能复制到 `~/.agents/skills/exam-scribe/`（所有项目可用）；加上 `--project <文件夹>` 则装到 `<文件夹>/.agents/skills/`（单个项目）。之后输入 `$exam-scribe`，或直接描述任务 |
+| **Codex**（命令行、IDE、应用） | 对 Codex 说：`$skill-installer install https://github.com/instl999/exam-scribe/tree/main/exam-scribe`（它会把技能下载到 `~/.codex/skills/`），或运行 `python install.py --codex`（复制到 `~/.agents/skills/exam-scribe/`；加上 `--project <文件夹>` 则只装到该项目）。之后输入 `$exam-scribe`，或直接描述任务 |
 | **Claude Code** | `python install.py --claude`（`~/.claude/skills/exam-scribe/`），或加上 `--project <文件夹>` |
 | **Claude 应用**（claude.ai、桌面版） | 从[最新发布版本](https://github.com/instl999/exam-scribe/releases/latest)下载 `exam-scribe.skill` 并上传 |
 | **其他智能体** | `python install.py --dest <该智能体的技能文件夹>`，或让智能体读取 `exam-scribe/SKILL.md` |

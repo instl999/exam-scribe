@@ -153,5 +153,34 @@ class CardTests(unittest.TestCase):
             helpers.cleanup(ws)
 
 
+class QuoteLengthTests(unittest.TestCase):
+    def test_short_but_identifying_cjk_quotes_are_long_enough(self):
+        from examscribe_lib.citations import quote_long_enough
+        self.assertTrue(quote_long_enough("传播学又是一门交叉学科"))      # 10 characters
+        self.assertTrue(quote_long_enough("情報社会の問題解決"))
+        self.assertFalse(quote_long_enough("交叉学科"))                   # 4 characters identify nothing
+        self.assertFalse(quote_long_enough("energy is work"))
+        self.assertTrue(quote_long_enough("energy is the capacity"))
+
+
+class UntouchedDraftTests(unittest.TestCase):
+    def test_check_on_the_untouched_draft_costs_no_attempt(self):
+        from examscribe_lib.pipeline import check, compute_next
+        ws = helpers.new_workspace()
+        try:
+            task = compute_next(ws)
+            self.assertEqual(task.kind, "write-section")
+            res = check(ws)
+            self.assertFalse(res.ok)
+            self.assertIn("NOT STARTED", res.text)
+            self.assertNotIn(task.id, ws.state.get("attempts", {}))
+            task.edit.write_text(task.edit.read_text(encoding="utf-8") + "\n", encoding="utf-8")   # touched
+            res = check(ws)
+            self.assertNotIn("NOT STARTED", res.text)
+            self.assertEqual(ws.state["attempts"][task.id], 1)
+        finally:
+            helpers.cleanup(ws)
+
+
 if __name__ == "__main__":
     unittest.main()

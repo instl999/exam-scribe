@@ -88,8 +88,14 @@ class PipelineTests(unittest.TestCase):
     def test_accept_flags_after_attempts(self):
         ws = helpers.new_workspace()
         try:
+            draft = ws.draft_dir("ch01") / "1.1.md"
+            # checks on the untouched skeleton cost nothing, so they cannot be burned to reach --accept-flags
+            for _ in range(5):
+                self.assertIn("NOT STARTED", check(ws).text)
+            self.assertIn("NOT STARTED", check(ws, accept_flags=True).text)
+            draft.write_text(draft.read_text(encoding="utf-8") + "\n", encoding="utf-8")    # an attempt was made
             for _ in range(4):
-                self.assertFalse(check(ws).ok)          # skeleton still full of placeholders
+                self.assertFalse(check(ws).ok)          # still full of placeholders
             res = check(ws, accept_flags=True)
             self.assertTrue(res.ok, res.text[:1500])
             text = read_text(ws.draft_dir("ch01") / "1.1.md")

@@ -112,7 +112,8 @@ def _check_quote(ctx: LintContext, issues: list[Issue], blk: Block, f_line: int,
         return None
     if res.status == "too-short":
         _err(issues, f_line, blk, "quote-short", f"{key}: the quote is too short to identify ({cite.quote!r}).",
-             f"Quote at least {t['quote_min_words']} consecutive words from the book.", "evidence")
+             f"Quote at least {t['quote_min_words']} consecutive words from the book (in Chinese or Japanese, at least "
+             f"{2 * t['quote_min_words']} characters).", "evidence")
         return None
     hint = (f'Closest text on p.{cite.page}: "{res.closest}". Copy the words exactly from the source file.'
             if res.closest and res.score >= 0.5 else

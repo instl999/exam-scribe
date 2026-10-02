@@ -174,6 +174,22 @@ So with a small model in every role the material is usable and honest about its 
 through some additions; the writer and checker cards now name that case explicitly, and a stronger checker
 model remains the better choice.
 
+### A GPT model in Codex
+
+The same brief (with Codex's paths) went to Codex CLI 0.158 with the user's default model (gpt-6-astra, reasoning
+effort low), sandboxed to the trial folder (`workspace-write`, no network), with the skill in the trial folder's
+`.agents/skills/`.
+
+The first run, on the skill before the changes below, stopped after two cards. After OCR, the script saves a speed
+record in the home folder; the sandbox forbids that write, and Python's `tempfile` on Windows takes "access denied"
+for a name clash and retries up to 2^31 times, so the command spun for ten minutes. The model waited, read the
+scripts (read-only) to understand the wait, interrupted the command and reported it exactly, without touching the
+skill. Files are now created directly, so a forbidden write fails at once, and a `PermissionError` gives the agent
+a clear instruction instead of a traceback. Checked inside Codex's real sandbox: read-only mode now prints the
+instruction; `workspace-write` finishes OCR and skips the speed record.
+
+GPT_TRIAL_RESULTS_EN
+
 ## 4. Skill-creator evals (with-skill vs. baseline)
 
 `exam-scribe/evals/evals.json` holds three realistic prompts with checkable expectations, using the sample

@@ -13,7 +13,7 @@ import difflib
 import re
 from dataclasses import dataclass, field
 
-from .common import Workspace, build_key, key_of, number_groups, numbers_in, word_count
+from .common import _CJK_RE, Workspace, build_key, key_of, number_groups, numbers_in, word_count
 
 REF_PATTERNS = re.compile(
     r"\b(?:fig(?:ure)?s?\.?|tables?|eqs?\.?|equations?|examples?|sections?|chapters?|ch\.|steps?|parts?|"
@@ -21,6 +21,16 @@ REF_PATTERNS = re.compile(
     re.I)
 EQ_REF = re.compile(r"\(\d+(?:\.\d+)+[a-z]?\)")
 ID_REF = re.compile(r"\b(?:T|EQ|WE|FIG|TAB|LO|SUM|Q|CMP|PR|TL|CAUSE|RU|TR|OUT)-[\w.\-]*\w")
+
+
+def quote_long_enough(quote: str, min_words: int = 4) -> bool:
+    """Long enough to identify one place in the book: min_words words, where a Chinese/Japanese/Korean character
+    counts as half a word, and at least 12 letters (8 characters for text that is mostly CJK, whose characters
+    carry more than letters do: "传播学又是一门交叉学科" is plenty)."""
+    qkey = key_of(quote)
+    cjk = len(_CJK_RE.findall(quote))
+    min_key = 8 if cjk * 2 >= len(qkey) > 0 else 12
+    return len(qkey) >= min_key and word_count(quote) >= min_words
 
 
 @dataclass
@@ -118,7 +128,7 @@ class QuoteIndex:
             res.found_pages = hits
             res.note = f"there is no page labeled '{page_spec}' in this book"
             return res
-        if len(qkey) < 12 or word_count(quote) < min_words:
+        if not quote_long_enough(quote, min_words):
             res.status = "too-short"
             res.note = f"quotes need at least {min_words} words so they identify one place in the book"
             return res
