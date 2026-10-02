@@ -54,6 +54,17 @@ def install_draft(ws, chapter: str, name: str) -> Path:
     return dst
 
 
+def best_span(ctx: str, claim: str, n: int = 7) -> str:
+    """The n-word stretch of the context that shares the most words with the claim (what a careful checker copies)."""
+    from examscribe_lib.lint import _units
+    toks = ctx.split()
+    if len(toks) <= n:
+        return ctx
+    cu = _units(claim)
+    best = max(range(len(toks) - n + 1), key=lambda i: len(_units(" ".join(toks[i:i + n])) & cu))
+    return " ".join(toks[best:best + n])
+
+
 def oracle_fill(ws, lazy: bool = False) -> str:
     """Fill the current worksheet like a perfect checker (or a lazy one that marks everything SUPPORTED)."""
     from examscribe_lib import verify as V
@@ -72,6 +83,7 @@ def oracle_fill(ws, lazy: bool = False) -> str:
         ctx = re.sub(r"^\[p\.[^\]]*\]\s*", "", b.value("context"))
         span = " ".join(ctx.split()[:7])
         if b.kind == "claim":
+            span = best_span(ctx, b.value("claim"))
             fill = {"verdict": "NOT_SUPPORTED" if canary else "SUPPORTED", "span": "NONE" if canary else span,
                     "problem": "The context does not say this." if canary else ""}
         elif b.kind == "formula-check":
@@ -183,7 +195,9 @@ def drive(ws, max_steps: int = 200, lazy_first: bool = False) -> list[str]:
             oracle_fill(ws, lazy=not lazy_done and task.kind == "verify-claims")
             if not lazy_done and task.kind == "verify-claims":
                 res = check(ws)
-                assert not res.ok and "planted false claim" in res.text, res.text[:300]
+                # a lazy checker is caught by the planted false claims, or by spans that do not support its verdicts
+                assert not res.ok and ("planted false claim" in res.text or
+                                       "shares no words with the claim" in res.text), res.text[:300]
                 lazy_done = True
                 continue
         elif task.kind == "notify":

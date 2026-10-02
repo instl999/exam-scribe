@@ -15,7 +15,8 @@ recomputes every number, and a separate checker pass (with planted false claims 
 test its attention) confirms each claim. Anything that cannot be confirmed is shown
 with a warning, never hidden.
 
-`SKILL` below means the folder this file is in. Run everything as `python SKILL/scripts/examscribe.py ...`.
+`SKILL` below means the folder this file is in. Run everything as `python SKILL/scripts/examscribe.py ...`, using
+the Python command that works on this computer (`python`, `python3`, or `py -3` on Windows).
 
 ## The loop (this is the whole method)
 
@@ -34,8 +35,9 @@ run `next` again: it always shows the current task. `status <workspace>` shows p
 ## Starting a new book
 
 1. `python SKILL/scripts/examscribe.py doctor` - if packages are missing, ask the user before installing:
-   `python -m pip install -r SKILL/requirements.txt`. If PyMuPDF cannot be installed, go on anyway: text PDFs
-   are then read with pdfplumber or pypdf (slower, no figure pictures, no OCR).
+   `python -m pip install -r SKILL/requirements.txt` (a sandbox without network cannot install: ask the user to
+   allow it or to run the command). If PyMuPDF cannot be installed, go on anyway: text PDFs are then read with
+   pdfplumber or pypdf (slower, no figure pictures, no OCR).
 2. Pick a workspace folder (default: `./exam-prep/<short-book-name>`), then:
    `python SKILL/scripts/examscribe.py init <workspace> --book <file> [--tier strict]`
    It detects the book's language (override with `--language xx`) and prints a quick check of the file:
@@ -69,19 +71,30 @@ has a short time limit, run it in the background or with a longer timeout, and f
    costs the student marks; a flagged gap only costs a minute of checking.
 5. **Only scripts grant trust.** Never add ✅ ⚠️ 💡 marks, and never tell the user something is
    verified unless the report or a card says so.
-6. **Do the card, nothing else.** Edit only the file in `EDIT`, with your file-editing tool (never with shell
-   commands: on Windows they destroy non-English text), keep every `:::` line and ID, and do not write ahead.
-   On FAIL, fix exactly the listed lines. If attempts run out, `check --accept-flags` marks what still fails
-   as UNSURE for a human; nothing is silently dropped. Never delete a block to get past a check.
-7. **Running out of context is fine; rushing is not.** A chapter is many cards. Everything is saved in the
-   workspace, so when your context or token budget runs low, finish the current card, tell the user where
-   you are, and stop: a new session continues with `next`. Never skip blocks, write minimal notes, or use
-   `--accept-flags` early to save tokens.
-8. **Checker tasks need fresh eyes.** Cards marked *fresh context* (claim checks, formula checks,
-   blind solving, reconciling) should run in a subagent or a new chat when you can start one:
+6. **Do the card, nothing else.** Edit only the file in `EDIT`, with your file-editing tool (`apply_patch` in
+   Codex, Edit in Claude Code; never shell commands: on Windows they destroy non-English text), keep every `:::`
+   line and ID, and do not write ahead. On FAIL, fix exactly the listed lines. If attempts run out,
+   `check --accept-flags` marks what still fails as UNSURE for a human; nothing is silently dropped. Never delete
+   a block to get past a check.
+7. **Do the reading and judging yourself.** Never write or run a program that fills drafts or worksheets:
+   copying quotes into fields, generating questions or options, setting verdicts or spans. The only programs to
+   run are the `examscribe.py` commands (shell commands that just read files are fine). A fill-in script cannot
+   tell what the book means: its notes teach the student nothing and its verdicts vouch for nothing.
+8. **Keep going; stop only for a reason.** After PASS, start the next card at once. Do not end your turn to report
+   progress or to ask whether to continue. Stop only where a card says to talk to the user, at `TASK done`, or when
+   your context or token budget runs low: then finish the current card, tell the user where you are, and stop -
+   a new session continues with `next`. Never skip blocks, write minimal notes, or use `--accept-flags` early to
+   save tokens.
+9. **Checker tasks need fresh eyes.** Cards marked *fresh context* (claim checks, formula checks,
+   blind solving, reconciling) should run in a subagent or a new session when you can start one:
    give it the card text. If you cannot, do them yourself but look only at the worksheet, never the
    drafts. Some claims in these worksheets are planted false claims; missing one means the batch is redone.
-9. **Never edit script-owned files**: `state.json`, `source/`, `inventory/`, `verify/*.json`, `.keys.json`.
+10. **Never touch the skill or the script-owned files.** Do not edit any file in SKILL, and do not edit, create
+   or open the workspace's `state.json`, `.integrity.json`, top-level `source/` folder, `inventory/` or
+   `verify/*.json` (`.keys.json` included). The files a card names under READ (such as
+   `chapters/ch01/source/1.1.md`) and EDIT are yours to use. Before every command the scripts compare their own
+   files and these records with what they wrote, and stop with `STOP:` if anything differs. Then run
+   `restore <ws>`: it puts the scripts' version back, and the verification report lists the incident.
 
 ## Talking to the user
 
@@ -127,10 +140,13 @@ Keep `strict` unless the user or operator says the model is frontier-class
 | Formula text looks garbled | open the image named in the draft comment if you can see images; else `UNSURE: ...` |
 | Password-protected or unreadable file | tell the user; ExamScribe cannot fix it |
 | Huge book, little time | set `scope.chapters` (or `scope.pages 45-120`) to what the exam covers |
+| `STOP: ... changed` | a script-owned file or the skill was edited. Workspace records: `restore <ws>`, then `next`. Skill files: undo the edit or reinstall the skill. Never edit them to get past a check |
+| Permission, read-only or network errors (sandboxed agents such as Codex) | keep the workspace inside the folder you may write to (the default `./exam-prep/...` is); installing packages and `ocr-setup` need network: ask the user to allow it or to run the command |
+| `python` not found | use `py -3` (Windows) or `python3`; the commands are the same |
 
 ## Commands
 
-`next`, `check [--accept-flags]`, `status`, `restore-draft`, `config <ws> show|get|set`, `plan [--confirm]`,
+`next`, `check [--accept-flags]`, `status`, `restore-draft`, `restore`, `config <ws> show|get|set`, `plan [--confirm]`,
 `add-material <ws> <file> --kind past-paper|syllabus|slides`, `find <ws> "words"`, `page <ws> <label> [--image]`,
 `format <kind>`, `build [--pdf]`, `report`, `mistakes <ws> add|import|due`, `outline [--confirm|--from-text]`,
 `probe <file>`, `extract <file>`, `ingest`, `ocr`, `ocr-setup`, `inventory`, `doctor`. Run `python SKILL/scripts/examscribe.py help`

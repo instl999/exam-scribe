@@ -47,8 +47,25 @@ Other commands:
   ocr-setup [<ws>] [--language xx]  download Tesseract language data (a few MB) so scans in that language can
                                     be read on any computer (ask the user first)
   inventory <ws>                    rebuild the inventory
+  restore <ws>                      put back script-owned files (state, records) that were changed by hand
   doctor                            check Python packages and OCR engines
 """
+
+SKILL_CHANGED = """STOP: ExamScribe's own files were changed after it was installed:
+  {files}
+The checks can only vouch for the notes when the scripts are exactly as published, so no command runs until the
+original files are back. Never edit the skill to get past a check: fix the notes instead, or mark what you cannot
+fix UNSURE. Undo the edits (or reinstall ExamScribe), then run the same command again.
+(For the user: if you changed the skill on purpose, re-create scripts/integrity.json with tools/make_integrity.py
+from the ExamScribe repository.)"""
+
+WORKSPACE_CHANGED = """STOP: these files are written only by ExamScribe's commands, but something else changed them:
+  {files}
+They record what was extracted, checked and verified. A changed record could make unchecked notes look verified,
+so no command runs until they are put back. Run:
+  {restore}
+It puts back the scripts' last version (drafts and worksheets are not touched), and the verification report will
+list the incident. Then continue with next. Never edit or create these files: they are not part of any task."""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -58,6 +75,11 @@ def main(argv: list[str] | None = None) -> int:
         print(HELP)
         return 0
     cmd = argv[0]
+    from examscribe_lib.integrity import skill_changes
+    changed = skill_changes()
+    if changed:
+        print(SKILL_CHANGED.format(files="\n  ".join(changed)))
+        return 3
     p = argparse.ArgumentParser(prog=f"examscribe {cmd}", add_help=False)
     try:
         if cmd == "doctor":
@@ -94,12 +116,16 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("file")
             p.add_argument("--language", default=None)
             a = p.parse_args(argv[1:])
-            import tempfile
+            import shutil
+            from examscribe_lib.common import make_temp_dir
             from examscribe_lib.images import prepare_book
             from examscribe_lib.probe import probe_book, probe_text
-            with tempfile.TemporaryDirectory() as tmp:
-                book = prepare_book(Path(a.file).resolve(), Path(tmp) / "pictures.pdf")
+            tmp = make_temp_dir("examscribe-probe-")
+            try:
+                book = prepare_book(Path(a.file).resolve(), tmp / "pictures.pdf")
                 print(probe_text(probe_book(book, a.language)))
+            finally:
+                shutil.rmtree(tmp, ignore_errors=True)
             return 0
         if cmd == "extract":
             p.add_argument("file")
@@ -141,6 +167,8 @@ def main(argv: list[str] | None = None) -> int:
             guess = (info or {}).get("lang_guess")
             language = a.language or guess or "en"
             ws = init_workspace(Path(a.workspace).resolve(), book_path, a.tier, title, language)
+            from examscribe_lib.integrity import snapshot
+            snapshot(ws.root)
             print(f"Created workspace {ws.root} (tier: {a.tier}, book language: {language}"
                   + (" - detected from the text" if not a.language and guess else "") + ").")
             if info:
@@ -155,6 +183,22 @@ def main(argv: list[str] | None = None) -> int:
             raise ESError(f"'{cmd}' needs a workspace folder.", f"Example: python {CLI} {cmd} ./exam-prep/chemistry")
         ws = Workspace.open(Path(argv[1]))
         rest = argv[2:]
+        from examscribe_lib import integrity
+        if cmd == "restore":
+            lines = integrity.restore(ws.root)
+            print("\n".join(lines) if lines else "Nothing to restore: every script-owned file is as the scripts "
+                                                  "wrote it.")
+            print(f"\nNext: python {CLI} next \"{ws.root}\"")
+            return 0
+        problems = integrity.workspace_changes(ws.root)
+        bound = integrity.skill_binding_problem(ws.root)
+        if bound:
+            print(SKILL_CHANGED.format(files=bound))
+            return 3
+        if problems:
+            print(WORKSPACE_CHANGED.format(files="\n  ".join(problems), restore=f"python \"{CLI}\" restore "
+                                                                                 f"\"{ws.root}\""))
+            return 3
         if cmd == "next":
             from examscribe_lib.pipeline import compute_next, render_card
             print(render_card(ws, compute_next(ws)))
@@ -292,6 +336,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}")
         if exc.hint:
             print(f"Fix: {exc.hint}")
+        return 2
+    except PermissionError as exc:      # sandboxed agents (Codex: workspace-write) may write only inside their folder
+        print(f"ERROR: no permission to write {exc.filename or 'a file'} ({exc.strerror or exc}).")
+        print("Fix: keep the workspace inside the folder this agent may write to (in a sandbox: the project folder), "
+              "or ask the user to allow the write. Nothing was lost; run the same command again afterwards.")
         return 2
     except SystemExit as exc:          # argparse errors
         return int(exc.code or 2)

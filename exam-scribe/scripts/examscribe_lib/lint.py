@@ -412,6 +412,16 @@ def _lint_block(blk: Block, ctx: LintContext, issues: list[Issue], stats: dict) 
         if key_of(got) != key_of(want) and key_of(want) not in key_of(got):
             _err(issues, blk.line, blk, "term-changed", f"term: must be the book's term '{want}' (found '{got}').",
                  "Keep the term exactly as in the draft.")
+    if blk.kind == "concept":
+        # "in plain words" that only repeats the definition teaches nothing (and is what a fill-in script produces)
+        defs, plain = citations(blk.value("definition")), blk.get("plain")
+        if defs and plain is not None and plain.value.strip() and not is_unsure(plain.value):
+            said, quote = key_of(strip_citations(plain.value)), key_of(defs[0].quote)
+            if said and quote and len(said) >= 0.8 * len(quote) and _similarity(said, quote) >= 0.9:
+                _err(issues, plain.line, blk, "plain-copies-definition",
+                     "plain: repeats the book's definition almost word for word.",
+                     "Explain it the way you would to a student, in shorter and simpler words of your own, then cite "
+                     "the book's words it rests on.")
     # per-field checks
     for f in blk.fields:
         fs = _field_spec(blk.kind, f.key)
@@ -731,6 +741,7 @@ def lint_worksheet(doc: Doc, originals: dict[str, dict[str, str]], kind: str, qi
     issues: list[Issue] = list(doc.issues)
     stats = {"items": 0}
     seen = set()
+    spans: dict[str, list[Block]] = {}       # SUPPORTED spans, to catch one span pasted under many claims
     for no, line in enumerate(doc.lines, start=1):
         if PLACEHOLDER_RE.search(line):
             _err(issues, no, None, "placeholder", f"Unfilled: {line.strip()[:70]}", "Replace every <<FILL ...>>.")
@@ -774,6 +785,13 @@ def lint_worksheet(doc: Doc, originals: dict[str, dict[str, str]], kind: str, qi
                 elif key_of(span) not in key_of(ctx_text):
                     _err(issues, blk.get("span").line, blk, "span-not-in-context",
                          f"{blk.id}: the span is not in CONTEXT.", "Copy the words exactly from the context line.")
+                elif not shares_words(span, orig.get("claim", "")):
+                    _err(issues, blk.get("span").line, blk, "span-unrelated",
+                         f"{blk.id}: the span shares no words with the claim, so it cannot be what supports it.",
+                         "Copy the words of the context that say what this claim says. If no words do, the verdict "
+                         "is not SUPPORTED.")
+                else:
+                    spans.setdefault(key_of(span), []).append(blk)
             elif verdict in ("PARTIAL", "NOT_SUPPORTED", "CONTRADICTED"):
                 if word_count(blk.value("problem")) < 3:
                     _err(issues, blk.line, blk, "problem", f"{blk.id}: say what is wrong in 'problem:' (a sentence).", "")
@@ -822,4 +840,53 @@ def lint_worksheet(doc: Doc, originals: dict[str, dict[str, str]], kind: str, qi
     for bid in originals:
         if bid not in seen:
             _err(issues, 0, None, "block-missing", f"Worksheet item {bid} was deleted.", "Restore it and fill it in.")
+    for same in spans.values():
+        if len(same) > MAX_SAME_SPAN:
+            for blk in same[MAX_SAME_SPAN:]:
+                _err(issues, blk.get("span").line, blk, "span-repeated",
+                     f"{blk.id}: the same span is given for {len(same)} claims.",
+                     "Each claim needs the words of its context that say what that claim says.")
     return LintResult(issues, stats)
+
+
+# ------------------------------------------------------------------------ evidence that is really about the claim
+
+MAX_SAME_SPAN = 3
+_STOPWORDS = set("""the and for that with this from are was were has have had not but its into than then they their
+them which when what also can may such these those been being will would should could there here each other more most
+some any all one two its his her our your about over under between while where who whom whose does did done very
+""".split())
+_CJK_RUN = re.compile(r"[぀-ヿ㐀-鿿가-힯]+")
+_WORD_RE = re.compile(r"[^\W\d_]{3,}")
+_NUM_RE = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _units(text: str) -> set[str]:
+    """Content units of a text: words of 3+ letters (minus common function words), numbers, and pairs of
+    Chinese/Japanese/Korean characters (those scripts do not separate words)."""
+    import unicodedata
+    t = unicodedata.normalize("NFKC", text or "").lower()
+    out: set[str] = set()
+    for run in _CJK_RUN.findall(t):
+        out.update(run[i:i + 2] for i in range(len(run) - 1))
+    rest = _CJK_RUN.sub(" ", t)
+    out.update(w for w in _WORD_RE.findall(rest) if w not in _STOPWORDS)
+    out.update(_NUM_RE.findall(t))
+    return out
+
+
+def shares_words(a: str, b: str) -> bool:
+    """True when two texts share a content word, number or character pair; long words also match when one contains
+    the other or they share a 5-letter stem ("energies"/"energy", "Erhaltung"/"Energieerhaltung")."""
+    import os.path
+    ua, ub = _units(a), _units(b)
+    if ua & ub:
+        return True
+    la = [w for w in ua if len(w) >= 5 and not w[0].isdigit()]
+    lb = [w for w in ub if len(w) >= 5 and not w[0].isdigit()]
+    return any(x in y or y in x or len(os.path.commonprefix([x, y])) >= 5 for x in la for y in lb)
+
+
+def _similarity(a: str, b: str) -> float:
+    import difflib
+    return difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()

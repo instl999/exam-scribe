@@ -39,8 +39,11 @@ paragraph such as an equation line is included). Judge only from the context.
 | `NOT_SUPPORTED` | the context does not say it | claim about "calories" when the context is about energy |
 | `CONTRADICTED` | the context says the opposite or a different number | "1 kJ = 1010 J" vs. "1 kJ = 1000 J" |
 
-- For `SUPPORTED`, copy at least 3 words from the context into `span:`. The script checks the span really is in
-  the context, so a rubber-stamp is detected.
+- For `SUPPORTED`, copy at least 3 words from the context into `span:`: the words that say what this claim says.
+  The script checks that the span is in the context, that it shares words with the claim, and that one span is not
+  pasted under more than three claims, so a rubber-stamp (or a script that fills spans) is detected.
+- Judge every block by reading it; never let a program fill the worksheet, and never open `.keys.json` or the other
+  files in `verify/`.
 - For anything else write `span: NONE` and one sentence in `problem:` saying what is wrong. The writer will see it.
 - Claims that repeat their whole quote word for word are verified automatically and never reach you.
 - **Canaries.** Every worksheet contains a few planted false claims made by changing a real one: a number

@@ -7,11 +7,10 @@ printed page numbers), headings (#, ##) and **bold** key terms, so it can also b
 from __future__ import annotations
 
 import shutil
-import tempfile
 import time
 from pathlib import Path
 
-from .common import ESError, Workspace, write_json, write_text
+from .common import ESError, Workspace, make_temp_dir, write_json, write_text
 
 
 def _md_para(p: dict) -> str:
@@ -36,7 +35,7 @@ def extract_markdown(book: Path, out: Path | None = None, pages: str | None = No
     if not book.exists():
         raise ESError(f"File not found: {book}")
     start = time.perf_counter()
-    tmp = Path(tempfile.mkdtemp(prefix="examscribe-extract-"))
+    tmp = make_temp_dir("examscribe-extract-")
     try:
         ws = Workspace(tmp)
         write_json(ws.config_path, {"version": 1, "title": book.stem, "tier": "strict",

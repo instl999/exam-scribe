@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-一个 Agent Skill（智能体技能），把教科书变成学生可以信赖的备考材料：
+一个 Agent Skill（智能体技能），适用于 Codex、Claude Code、Claude 应用和其他智能体，把教科书变成学生可以信赖的备考材料：
 
 - **为主动回忆设计的学习笔记**：先做课前小测，再逐一学习每个关键术语、公式、例题和图表，每项都附有课本原文定义、通俗解释和常见错误；答案先模糊显示，学生自己尝试之后才揭晓
 - **自测题**（单选、判断、数值、填空、简答），答案由独立的一轮"盲解"重新解出核对
@@ -14,23 +14,27 @@
 
 准确性第一。每条陈述都引用课本原文并注明页码。脚本逐一核对每条引文、每个数字和每个计算；另有一轮独立的核对确认每条陈述，并用故意植入的错误陈述（"金丝雀"）检验核对者是否认真。未经核实的内容绝不会被当作已核实的内容呈现。
 
-它也专为**能力较弱的模型**设计。由脚本驱动的状态机每次只派发一个小任务；骨架预先填好结构和证据提示；严格的检查器（linter）会解释每一个问题；尝试次数有上限；模型分级（tier）在任务大小与安全性之间取舍。详见 [`exam-scribe/references/model-tiers.md`](exam-scribe/references/model-tiers.md)（英文）。
+它也专为**能力较弱的模型**设计。由脚本驱动的状态机每次只派发一个小任务；骨架预先填好结构和证据提示；严格的检查器（linter）会解释每一个问题；尝试次数有上限；模型分级（tier）在任务大小与安全性之间取舍。护栏还能识破智能体常走的捷径（中途停下汇报、用脚本代填、改动检查脚本）。详见 [`exam-scribe/references/model-tiers.md`](exam-scribe/references/model-tiers.md)（英文）。
 
 ## 仓库结构
 
 ```
 exam-scribe/                 技能本体（安装或打包的就是这个文件夹）
   SKILL.md                   模型阅读的指令
+  agents/openai.yaml         Codex 中显示的名称
   scripts/examscribe.py      命令行工具：init、next、check、status、config、plan、build ……
+  scripts/integrity.json     技能文件的校验和（有文件被改动时脚本拒绝运行）
   scripts/examscribe_lib/    提取、清单、笔记格式、检查器、计算器、核实、金丝雀、流水线、
                              渲染、记忆卡、学习计划、报告
   references/                按需加载的指南、学科配置、完整示例
   assets/                    学习页面的 CSS 和 JavaScript
   evals/                     skill-creator 评测提示和示例教材（不打包）
-tests/                       144 个单元测试和集成测试（python -m unittest discover -s tests），包括由
+tests/                       153 个单元测试和集成测试（python -m unittest discover -s tests），包括由
                              tests/fixtures/lang_books.py 生成的 9 种语言的文字版和扫描版 PDF，以及来自真实
                              书籍的回归测试（test_realworld.py）
-tools/                       开发工具：示例工作区、变异测试、指标统计、文档生成、Python 兼容性检查
+tools/                       开发工具：示例工作区、变异测试、指标统计、文档生成、Python 兼容性检查、
+                             完整性清单（make_integrity.py）
+install.py                   为 Codex、Claude Code 或其他智能体安装本技能
 trials/                      真实书籍评测脚本和小模型试运行说明（书籍本身和试运行工作区不在仓库中，
                              见 trials/corpus/README.md）
 docs/EVALUATION.md           如何衡量质量：从单元测试到真实教科书（中文版：docs/EVALUATION.zh-CN.md）
@@ -84,11 +88,29 @@ OCR 只用于扫描件和损坏的文字层；它会等考试信息问答（inta
 
 ## 安装技能
 
-- **Claude Code**：把 `exam-scribe/` 复制到 `~/.claude/skills/exam-scribe/`（所有项目可用）或 `<项目>/.claude/skills/exam-scribe/`（单个项目）。
-- **Claude 应用**：上传打包好的 `exam-scribe.skill` 文件（即 `exam-scribe/` 文件夹的 zip 压缩包）。
-- **其他支持 Agent Skills 的智能体**（技能是一个包含 `SKILL.md` 的文件夹）：把文件夹放到该智能体加载技能的位置。任何能运行 Python 的智能体也可以直接按照 `SKILL.md` 操作。
+ExamScribe 是标准的 Agent Skill（一个包含 `SKILL.md` 的文件夹），任何能运行 Python 的智能体都能使用。下载或克隆本仓库后：
+
+| 智能体 | 方法 |
+|---|---|
+| **Codex**（命令行、IDE、应用） | `python install.py --codex` 把技能复制到 `~/.agents/skills/exam-scribe/`（所有项目可用）；加上 `--project <文件夹>` 则装到 `<文件夹>/.agents/skills/`（单个项目）。之后输入 `$exam-scribe`，或直接描述任务 |
+| **Claude Code** | `python install.py --claude`（`~/.claude/skills/exam-scribe/`），或加上 `--project <文件夹>` |
+| **Claude 应用**（claude.ai、桌面版） | 从[最新发布版本](https://github.com/instl999/exam-scribe/releases/latest)下载 `exam-scribe.skill` 并上传 |
+| **其他智能体** | `python install.py --dest <该智能体的技能文件夹>`，或让智能体读取 `exam-scribe/SKILL.md` |
+
+只运行 `python install.py` 会为电脑上找到的所有智能体安装。然后安装一次 Python 依赖包：`python -m pip install -r <安装位置>/requirements.txt`（有些 Windows 电脑上用 `py -3` 代替 `python`）。发布版本中还提供 `exam-scribe.zip`（同一个文件夹），供没有安装程序的智能体使用。
 
 然后这样提问即可：*"这是我的化学课本，12 月 15 日考试，帮我做第 2 到第 4 章的学习笔记。"*
+
+## 与 GPT 模型一起使用（Codex、ChatGPT）
+
+无论使用哪个模型，判定"已核实"的都是同一套脚本：只有当脚本在所注页码上找到了引文、且独立核对确认无误时，一条陈述才算已核实。不同模型的差别在于需要修正多少次，以及会尝试哪些捷径。下面这些护栏针对的正是智能体常走的捷径：
+
+- 每张任务卡都要求在通过（PASS）后立即开始下一张，而不是停下来汇报进度或询问是否继续；
+- 禁止用程序代填笔记或核对工作表，检查还会识别这类程序留下的痕迹：与陈述毫无共同词语的支撑片段、同一片段被贴在多条陈述下、照抄定义的"通俗解释"；
+- 每条命令运行前，技能都会把自身文件与 `scripts/integrity.json` 比对，并把工作区记录与脚本写入的内容比对；发现手动改动时停止工作，直到 `restore` 恢复记录，核实报告也会列出这次事件；
+- 沙箱禁止的写入会立即失败并给出清楚的提示（在 Windows 上，Python 的临时文件机制在 Codex 沙箱中原本可能无限空转）。
+
+建议：保持 `strict` 级别；在 Codex 中，只要工作区位于项目文件夹内，默认的 `workspace-write` 沙箱即可正常工作；安装依赖包和 `ocr-setup` 需要联网一次。用 GPT 模型在 Codex 中完整运行的结果见 [docs/EVALUATION.zh-CN.md](docs/EVALUATION.zh-CN.md)。
 
 ## 工作原理
 
@@ -118,6 +140,10 @@ python tools/dev_setup.py ./demo-ws        # 生成示例教材，完成考试�
 - 核对者也是模型。金丝雀能衡量它是否认真，但模型有可能识破金丝雀，却仍漏掉真实的错误：由 Claude Haiku 同时担任编写者和核对者时，人工抽查的 20 条已核实陈述中有 2 条带有课本没有的小补充（多加的限定、扩大的范围）。条件允许时，请用较强的模型执行核对任务。
 - 小模型的上下文大约在五张任务卡后就会用满；它会在某张任务卡通过后停下，由新会话用 `next` 继续（一个 16 页的章节用了六个 Haiku 会话）。
 - 核实很彻底，所以在 strict 级别下处理整本教科书意味着大量小任务。请把 `scope.chapters` 限定在考试范围内。
+
+## 修改技能
+
+修改 `exam-scribe/` 中的任何文件后，请运行 `python tools/make_integrity.py` 记录新的校验和（技能文件被改动时脚本拒绝运行，清单更新之前测试也不会通过）。
 
 ## 文档语言
 

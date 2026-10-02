@@ -48,10 +48,17 @@ Set it with `config <ws> set tier strict|standard|frontier`.
 | Claims success too early | only `check` advances the state; the final report is computed from verdicts, not from the model's words | pipeline.py, report.py |
 | Small context window | writing tasks are split at paragraph boundaries to fit the tier's budget; worksheets are small | skeleton.py |
 | Cannot see images | formula checks accept `CANNOT_TELL`; such formulas are flagged, not trusted | verify.py |
+| Ends its turn to report progress or to ask whether to continue | every card says "On PASS, start the next card right away"; stopping is only for user questions, `TASK done` or a full context | pipeline.py, SKILL.md |
+| Writes its own program to fill drafts or worksheets | forbidden on every card; a SUPPORTED `span:` must share words with its claim and one span cannot serve many claims; `plain:` may not repeat the definition | pipeline.py, lint.py |
+| Edits the checker or the records to get past a check | `scripts/integrity.json` lists the skill's files; script-owned workspace files are recorded as the scripts write them; any other change stops every command until `restore`, and the report lists the incident | integrity.py |
+| Peeks at the canary keys | the cards forbid opening `verify/` files other than the worksheet; keys are stored salted and hashed (a deterrent, not a vault) | verify.py |
+| Rewrites files with shell commands (non-English text destroyed) | damaged drafts are detected and `restore-draft` puts the script's version back | pipeline.py |
 
 ## 3. Choosing a tier
 
 - Keep **strict** unless you know the model is frontier-class. Strict costs more steps, not more quality.
+- Tiers describe capability, not vendor: the same rules hold for Claude, GPT, Gemini or local models. A large model
+  run with low reasoning effort (a common default in coding agents) behaves like a smaller one: keep strict.
 - **standard** suits capable mid-size models that pass the checks on the first or second attempt most of the time.
 - **frontier** is for the strongest models; bigger tasks save time without weakening any check.
 - A useful signal: the `canary_stats` in `chapters/chNN/verify/verdicts.json` and the number of `FAIL`s per task.

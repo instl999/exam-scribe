@@ -7,6 +7,7 @@ from . import verify as V
 from .common import Workspace, read_json, read_text, rel, write_text
 from .esm import covers, is_unsure, parse
 from .render import badge, esc, page
+from .integrity import incidents
 from .ui import T, claim_text, flag_reason, use_language
 
 
@@ -24,7 +25,8 @@ def report_data(ws: Workspace) -> dict:
     quality = read_json(ws.quality_path, {}) or {}
     data = {"chapters": [], "totals": {"ok": 0, "warn": 0, "pending": 0, "unsure": 0, "skipped": 0, "planted": 0,
                                        "caught": 0, "rejected": 0, "q_ok": 0, "q_warn": 0, "q_pending": 0},
-            "extraction": _doubtful_pages(ws, quality.get("pages", {})), "conflicts": []}
+            "extraction": _doubtful_pages(ws, quality.get("pages", {})), "conflicts": [],
+            "incidents": incidents(ws.root)}
     for rec in ws.state.get("materials", {}).values():
         for tid, c in (rec.get("conflicts") or {}).items():
             data["conflicts"].append({"term": tid, **c})
@@ -112,6 +114,10 @@ def report_text(ws: Workspace) -> str:
                                                                      list(d["extraction"].items())[:15]))
     if d["conflicts"]:
         lines.append(f"Instructor material differs from the book for {len(d['conflicts'])} term(s).")
+    if d["incidents"]:
+        files = sorted({f for i in d["incidents"] for f in i.get("files", [])})
+        lines.append(f"Script-owned records were changed by hand {len(d['incidents'])} time(s) and put back by "
+                     "restore: " + ", ".join(files[:8]))
     return "\n".join(lines)
 
 
@@ -188,6 +194,13 @@ def render_report(ws: Workspace) -> dict:
         parts.append(f"<h2>{esc(T('Instructor material vs. book'))}</h2><ul>" + "".join(
             f"<li>{esc(c['term'])}: {esc(c['verdict'])} — {esc(c['explain'])} ({esc(c['material'])})</li>"
             for c in d["conflicts"]) + "</ul>")
+    if d["incidents"]:
+        parts.append(f"<h2>{esc(T('Records changed by hand'))}</h2><p>" +
+                     esc(T("Files that only the scripts write were changed outside them {n} time(s). ExamScribe put "
+                           "its own version back each time; still, read the flagged items with extra care.",
+                           n=len(d["incidents"]))) + "</p><ul>" +
+                     "".join(f"<li>{esc(i.get('time', ''))}: {esc(', '.join(i.get('files', [])))}</li>"
+                             for i in d["incidents"]) + "</ul>")
     path = ws.site_dir / "report.html"
     write_text(path, page(ws, T("Verification report"), "\n".join(parts), crumb=T("Verification report")))
     md = ws.export_dir / "verification-report.md"

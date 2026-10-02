@@ -707,6 +707,22 @@ TEXT: dict[str, tuple[str, ...]] = {
     "Instructor material vs. book": ("老师材料与课本的差异", "先生の資料と本の違い", "강사 자료와 책의 차이",
                                      "Material der Lehrkraft vs. Buch", "Support de l'enseignant et livre",
                                      "Material del profesor frente al libro", "Материалы преподавателя и книга"),
+    "Records changed by hand": ("被手动改动的记录", "手作業で変更された記録", "직접 수정된 기록", "Von Hand geänderte Aufzeichnungen",
+                                "Enregistrements modifiés à la main", "Registros modificados a mano",
+                                "Записи, изменённые вручную"),
+    "Files that only the scripts write were changed outside them {n} time(s). ExamScribe put its own version back each "
+    "time; still, read the flagged items with extra care.": (
+        "只应由脚本写入的文件在脚本之外被改动了 {n} 次。ExamScribe 每次都恢复了自己的版本；但阅读被标记的条目时仍请格外仔细。",
+        "スクリプトだけが書くファイルが、スクリプト以外で {n} 回変更されました。ExamScribe はそのたびに自分の版に戻しましたが、印の付いた項目は特に注意して読んでください。",
+        "스크립트만 쓰는 파일이 스크립트 밖에서 {n}번 수정되었습니다. ExamScribe가 매번 자기 버전으로 되돌렸지만, 표시된 항목은 특히 주의해서 읽으세요.",
+        "Dateien, die nur die Skripte schreiben, wurden {n}-mal außerhalb von ihnen geändert. ExamScribe hat jedes Mal "
+        "die eigene Fassung zurückgelegt; lies die markierten Punkte trotzdem besonders sorgfältig.",
+        "Des fichiers que seuls les scripts écrivent ont été modifiés en dehors d'eux {n} fois. ExamScribe a remis sa "
+        "propre version à chaque fois ; lisez tout de même les éléments signalés avec une attention particulière.",
+        "Archivos que solo escriben los scripts se modificaron fuera de ellos {n} vez/veces. ExamScribe repuso su "
+        "propia versión cada vez; aun así, lee con especial cuidado los elementos marcados.",
+        "Файлы, которые пишут только скрипты, были изменены вне их {n} раз(а). ExamScribe каждый раз возвращал свою "
+        "версию; всё же читайте отмеченные пункты особенно внимательно."),
     # verification flags (stored in English, shown translated)
     "quote matches the book only approximately": (
         "引文与课本只是大致相符", "引用が本と大まかにしか一致しない", "인용문이 책과 대략적으로만 일치함",

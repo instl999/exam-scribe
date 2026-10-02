@@ -61,6 +61,8 @@ WRITER_RULES = [
     "does not say something, write UNSURE: <reason>. A guess is worse than UNSURE.",
     "Questions: exactly one correct answer, answerable from this section. Explain each wrong mcq option.",
     "Do not add ✅ ⚠️ \U0001f4a1 symbols, and do not add new concept/formula blocks.",
+    "Write every field yourself after reading the source. Never write or run a program that fills the draft (copying "
+    "quotes into fields, generating questions or options): the notes are only as good as your reading.",
     "Never delete a block to get past a check: fill it, or keep it and add skip: <reason>. Edit the draft only with "
     "your file-editing tool, never with shell commands (on Windows they destroy non-English text); if the draft is "
     "damaged, run the restore-draft command.",
@@ -80,14 +82,21 @@ CHECKER_RULES = [
     "Right idea but a condition or qualifier is missing or changed (e.g. 'at constant pressure', 'always') = PARTIAL.",
     "The claim adds something the context does not say (an extra reason, a contrast such as 'rather than ...', a "
     "wider scope) = PARTIAL, even when the rest is right.",
-    "For SUPPORTED, copy the supporting words from the context into span: (at least 3 words).",
+    "For SUPPORTED, copy into span: the words of the context that say what THIS claim says (at least 3 words; "
+    "they share words with the claim). One span cannot serve many claims.",
     "Otherwise write one sentence in problem: saying what is wrong.",
     "Some claims are planted false claims that test attention. Missing one means the whole batch is redone.",
     "Do not change claim: or context: lines.",
+    "Judge every block yourself, one by one. Never write or run a program that fills in verdicts or spans, and "
+    "never open .keys.json or the other files in verify/: they are not part of the task.",
 ]
 
-FRESH_NOTE = ("FRESH CONTEXT: if you can start a subagent or a new chat, give it this whole card and let it do the "
-              "task. Otherwise do it yourself, but do not open the notes drafts: use only the worksheet.")
+FRESH_NOTE = ("FRESH CONTEXT: if you can hand work to a subagent or a new session/thread, give it this whole card "
+              "and let it do the task. Otherwise do it yourself, but do not open the notes drafts: use only the "
+              "worksheet.")
+KEEP_GOING = ("On PASS, start the next card right away. Do not stop to summarise progress or to ask whether to go "
+              "on: stop only where a card says to talk to the user, at TASK done, or when your context is nearly "
+              "full (then say: run next to continue).")
 
 
 def render_card(ws: Workspace, t: Task) -> str:
@@ -116,6 +125,8 @@ def render_card(ws: Workspace, t: Task) -> str:
         out.append("")
         out.append("DONE WHEN this command prints PASS:")
         out.append("  " + cmd(ws, "check"))
+        if t.kind not in ("intake", "confirm-plan", "notify"):
+            out.append(KEEP_GOING)
         if t.kind in ("write-section", "write-chapter", "fix"):
             left = tier["max_attempts"] - attempts
             if left > 0:
@@ -591,9 +602,11 @@ def check(ws: Workspace, accept_flags: bool = False, only_file: Path | None = No
     if kind == "done":
         return CheckResult(True, "PASS — nothing left to do.\n\n" + render_card(ws, task))
     if kind == "run-ingest":
-        return CheckResult(False, "FAIL — the book has not been extracted yet.\n\n" + render_card(ws, task))
+        return CheckResult(False, "NOT YET — this card is not finished with check: run the command on the card, then "
+                                  "next. The book has not been extracted yet.\n\n" + render_card(ws, task))
     if kind == "run-ocr":
-        return CheckResult(False, "FAIL — scanned pages still need OCR. " + task.goal + "\n\n" + render_card(ws, task))
+        return CheckResult(False, "NOT YET — this card is not finished with check: run the command on the card, then "
+                                  "next. " + task.goal + "\n\n" + render_card(ws, task))
     if kind == "need-ocr-engine":
         return CheckResult(False, "FAIL — no OCR engine yet; the user has to choose an option.\n\n" +
                            render_card(ws, task))

@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import sys
 import tempfile
 import unicodedata
@@ -46,11 +47,13 @@ def read_text(path: Path | str) -> str:
 
 
 def write_text(path: Path | str, text: str) -> None:
+    # Not tempfile.mkstemp: on Windows it takes "access denied" for a name clash and retries up to 2**31 times, so
+    # a write a sandbox forbids (Codex: anything outside the workspace) spins forever instead of failing.
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp-", suffix=path.suffix)
+    tmp = path.with_name(f".tmp-{os.getpid()}-{secrets.token_hex(4)}{path.suffix}")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+        with open(tmp, "x", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
         os.replace(tmp, path)
     except BaseException:
@@ -59,6 +62,22 @@ def write_text(path: Path | str, text: str) -> None:
         except OSError:
             pass
         raise
+    from .integrity import note_write          # script-owned workspace files: remember what the scripts wrote
+    note_write(path)
+
+
+def make_temp_dir(prefix: str) -> Path:
+    """A new temporary folder, without tempfile.mkdtemp's endless retry on Windows when a sandbox denies the write:
+    the system temp folder if it is writable, else the current folder."""
+    for parent in (Path(tempfile.gettempdir()), Path.cwd()):
+        d = parent / f"{prefix}{os.getpid()}-{secrets.token_hex(4)}"
+        try:
+            d.mkdir(parents=True)
+            return d
+        except OSError:
+            continue
+    raise ESError("There is no folder this command may write temporary files to.",
+                  "Run it from a folder you can write to (in a sandbox: the workspace folder).")
 
 
 def read_json(path: Path | str, default: Any = None) -> Any:
