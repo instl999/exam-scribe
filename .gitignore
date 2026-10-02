@@ -11,3 +11,5 @@ trials/*/
 !trials/corpus/
 trials/corpus/*.pdf
 trials/corpus/*.part
+# release builds (published as GitHub release assets, not committed)
+dist/
