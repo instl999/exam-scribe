@@ -11,7 +11,7 @@ cd tests
 python -m unittest
 ```
 
-The suite (144 tests) builds a 19-page sample textbook (`tests/fixtures/make_book.py`: bookmarks, roman front matter,
+The suite (158 tests) builds a 19-page sample textbook (`tests/fixtures/make_book.py`: bookmarks, roman front matter,
 running headers, bold terms, split equation numbers, subscripts, ligatures, a hyphenated line break, boxes,
 vector and raster figures, a table, an answer key and a scanned page) and checks extraction, inventory, the
 calculator, the notes format, quote checking, every linter rule for typical weak-model mistakes, canaries,
@@ -176,36 +176,46 @@ model remains the better choice.
 
 ### A GPT model in Codex
 
-The same brief (with Codex's paths) went to Codex CLI 0.158 with the user's default model (gpt-6-astra, reasoning
-effort low), sandboxed to the trial folder (`workspace-write`, no network), with the skill in the trial folder's
-`.agents/skills/`.
+The same brief (with Codex's paths) went to Codex CLI 0.158, sandboxed to the trial folder (`workspace-write`, no
+network), with the skill in the trial folder's `.agents/skills/`. The model was gpt-6-sol at its default reasoning
+effort (medium); gpt-6.1-sol is not offered to ChatGPT accounts in Codex. The run used the v1.0.0 release package.
 
-The first run, on the skill before the changes below, stopped after two cards. After OCR, the script saves a speed
-record in the home folder; the sandbox forbids that write, and Python's `tempfile` on Windows takes "access denied"
-for a name clash and retries up to 2^31 times, so the command spun for ten minutes. The model waited, read the
-scripts (read-only) to understand the wait, interrupted the command and reported it exactly, without touching the
-skill. Files are now created directly, so a forbidden write fails at once, and a `PermissionError` gives the agent
-a clear instruction instead of a traceback. Checked inside Codex's real sandbox: read-only mode now prints the
-instruction; `workspace-write` finishes OCR and skips the speed record.
+| Metric | gpt-6-sol | Haiku (for comparison) |
+|---|---|---|
+| reached `TASK done` | yes: 29 task cards in about 40 minutes of work (one interruption, resumed with `codex exec resume`) | yes, in six sessions |
+| claims verified | 94 of 95 (98.9%); the other one quotes years on an OCR page, which is always flagged | 97 of 107 (90.7%) |
+| planted false claims caught | 30 of 30; no worksheet redone | 39 of 39 |
+| answer keys | 23 confirmed by blind solving, 0 disputed | 22 confirmed, 0 disputed |
+| key terms covered, learning objectives with a question | 14 of 14; all | 14 of 14 |
+| UNSURE, skipped blocks | 0, 0 | 1, 1 |
+| hand audit of 20 checker-verified claims | 20 right | 18 right |
+| check FAILs while writing | 2 (one problem each) | many, over several fix rounds |
+| shortcuts | none: every edit through the file tool, no fill-in programs, no stop by the integrity guard; checker and solver ran as Codex sub-agents that opened only their worksheets | none after the fixes |
+| tokens | 8.4 million input (95% cached) and 56 thousand output, main agent and 4 sub-agents together | |
 
-The second run, on the fixed skill, was cut short after 43 minutes by the account's Codex usage limit, at claim
-worksheet 6 of 9. Up to there:
+Its checker was strict: it marked 15 lines PARTIAL or NOT_SUPPORTED, most of them explanations that only pointed at
+the book ("这与书中的表述相符", "this matches what the book says") or cited a passage narrower than the claim; the
+fix card corrected all of them. Such empty explanations are now refused when the draft is written
+(`why-says-nothing`), so a more lenient checker cannot let them through.
 
-| Step | Result |
-|---|---|
-| OCR of 16 pages inside the sandbox | finished (about 50 s per page on this 2-core VM; 19 s outside the sandbox) |
-| chapter list | right: chapter 1, its three sections and the end-of-chapter questions; the model also reported a stray "?" that OCR put into a section title |
-| writing: 7 section cards and the chapter blocks | all passed. Three check FAILs in all: a check run on the untouched draft (now answered "NOT STARTED" without using an attempt), quotes of 10-11 Chinese characters rejected as too short (now accepted: 8 characters are enough when the text is mostly Chinese or Japanese), and a definition quote that did not name its term |
-| claim checks | 60 of 103 claims judged in 5 worksheets by a Codex sub-agent (the card's fresh-context rule): 58 supported, 2 partial, both real (a definition missing the book's qualifier, an explanation listing a feature its context does not mention) |
-| planted false claims | 15 of 15 caught; no worksheet redone |
-| hand audit of 20 checker-verified claims | 20 right (Haiku: 18 of 20) |
-| shortcuts | none: every edit through the file tool, no fill-in programs, no stop by the integrity guard; the checker sub-agent opened only its worksheets |
-| tokens | main agent 5.7 million input (97% cached) and 27 thousand output; checker 0.8 million input |
+What the GPT runs changed in the skill:
 
-Where the book gives no real definition (社会关系), the model marked it UNSURE instead of passing off a nearby
-sentence as one. Not reached before the limit: claim worksheets 6-9, blind solving of the answer keys,
-reconciling, fixes and the build. For comparison, Haiku needed six sessions for the whole chapter; this run reached
-the claim checks in one.
+- **Sandbox writes.** The first run (on gpt-6-astra, the account's default) stopped after two cards: after OCR the
+  script saves a speed record in the home folder, the sandbox forbids that write, and Python's `tempfile` on Windows
+  takes "access denied" for a name clash and retries up to 2^31 times, so the command spun. The model waited,
+  interrupted the command and reported it exactly, without touching the skill. Files are now created directly, so a
+  forbidden write fails at once, and a `PermissionError` gives the agent an instruction instead of a traceback
+  (checked inside Codex's real sandbox).
+- **Checks that cost nothing.** Agents often run `check` to move on before they open the next file. A check on an
+  untouched draft or on a fresh worksheet now answers `NOT STARTED` and uses no attempt (attempts also cannot be
+  burned to unlock `--accept-flags`).
+- **Chinese and Japanese quotes** of 8-11 characters were rejected as too short; 8 characters now suffice when the
+  text is mostly Chinese or Japanese.
+- **The draft's own instruction comment** contained the placeholder text and was flagged as unfilled; every model
+  lost an attempt to it.
+
+A second gpt-6-astra run (reasoning effort low), cut short by the account's usage limit, wrote all 7 sections and
+judged 60 claims: 15 of 15 planted false claims caught, and 20 of 20 hand-audited verified claims right.
 
 ## 4. Skill-creator evals (with-skill vs. baseline)
 

@@ -154,7 +154,7 @@ def oracle_write_section(path: Path, lang: str, term_of: dict[str, str]) -> None
     for i in range(1, len(parts)):
         b = parts[i]
         typ = re.search(r"type: (\w+)", b).group(1)
-        why = f'why: {reason_right} [p.{p1}: "{s1}"]'
+        why = f'why: {shorten(s1)} [p.{p1}: "{s1}"]'     # what the book says, not just "the book says so"
         if typ == "mcq":
             b = re.sub(r"ask: <<FILL[^\n]*>>", f"ask: {q}", b)
             for letter, opt in zip("ABCD", [s1] + wrong[:3]):

@@ -29,7 +29,7 @@ exam-scribe/                 技能本体（安装或打包的就是这个文件
   references/                按需加载的指南、学科配置、完整示例
   assets/                    学习页面的 CSS 和 JavaScript
   evals/                     skill-creator 评测提示和示例教材（不打包）
-tests/                       153 个单元测试和集成测试（python -m unittest discover -s tests），包括由
+tests/                       158 个单元测试和集成测试（python -m unittest discover -s tests），包括由
                              tests/fixtures/lang_books.py 生成的 9 种语言的文字版和扫描版 PDF，以及来自真实
                              书籍的回归测试（test_realworld.py）
 tools/                       开发工具：示例工作区、变异测试、指标统计、文档生成、Python 兼容性检查、
@@ -110,7 +110,7 @@ ExamScribe 是标准的 Agent Skill（一个包含 `SKILL.md` 的文件夹），
 - 每条命令运行前，技能都会把自身文件与 `scripts/integrity.json` 比对，并把工作区记录与脚本写入的内容比对；发现手动改动时停止工作，直到 `restore` 恢复记录，核实报告也会列出这次事件；
 - 沙箱禁止的写入会立即失败并给出清楚的提示（在 Windows 上，Python 的临时文件机制在 Codex 沙箱中原本可能无限空转）。
 
-建议：保持 `strict` 级别；在 Codex 中，只要工作区位于项目文件夹内，默认的 `workspace-write` 沙箱即可正常工作；安装依赖包和 `ocr-setup` 需要联网一次。用 GPT 模型在 Codex 中运行的情况见 [docs/EVALUATION.zh-CN.md](docs/EVALUATION.zh-CN.md)。
+建议：保持 `strict` 级别；在 Codex 中，只要工作区位于项目文件夹内，默认的 `workspace-write` 沙箱即可正常工作；安装依赖包和 `ocr-setup` 需要联网一次。在 Codex 中使用 gpt-6-sol，一个扫描版中文章节一次运行就从 PDF 变成了经过核实的学习网站：95 条陈述中 94 条通过核实，23 个答案全部确认，30 条植入的错误陈述全部识别（详见 [docs/EVALUATION.zh-CN.md](docs/EVALUATION.zh-CN.md)）。
 
 ## 工作原理
 

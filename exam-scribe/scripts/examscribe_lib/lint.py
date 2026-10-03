@@ -196,6 +196,12 @@ def _cited_value(ctx: LintContext, issues: list[Issue], blk: Block, f, fspec: F,
     if fspec.cite == "required" and not claim and fspec.key not in ("source", "result"):
         _err(issues, f.line, blk, "no-claim", f"{f.key}: write the point in your own words before the citation.",
              "Put a short explanation first, then the [p.N: \"...\"] evidence.")
+    elif fspec.key == "why" and claim and says_nothing(claim):
+        # "这与书中的表述相符" / "This matches the book": a strict checker rejects these, a lenient one lets them through
+        _err(issues, f.line, blk, "why-says-nothing",
+             f"why: only says that the book says something ({claim.strip()[:40]!r}).",
+             "Say the reason itself, in your own words (what the book says and why it answers the question), then "
+             "cite the words it rests on.")
     if fspec.max_words and word_count(claim) > fspec.max_words:
         _err(issues, f.line, blk, "too-long", f"{f.key}: {int(word_count(claim))} words (max {fspec.max_words}).",
              "Shorten it. Short notes are easier to review.")
@@ -886,6 +892,33 @@ def shares_words(a: str, b: str) -> bool:
     la = [w for w in ua if len(w) >= 5 and not w[0].isdigit()]
     lb = [w for w in ub if len(w) >= 5 and not w[0].isdigit()]
     return any(x in y or y in x or len(os.path.commonprefix([x, y])) >= 5 for x in la for y in lb)
+
+
+# words that only point at the book ("this matches what the book says"), in the scripts the notes are written in
+_META_CJK = re.compile("这一|这个|这|此|该|上述|以上|它|是|与|和|跟|同|对|的|了|中|里|本书|书中|书里|课本|教材|教科书|原文|作者|文中|"
+                       "本节|本章|表述|说法|论述|观点|内容|定义|描述|解释|给出|指出|提出|说明|说|讲|写|提到|强调|明确|直接|"
+                       "清楚|基本|相符|一致|符合|吻合|正确|如此|这样|所述|所说|根据|依据|按照|可知|可见|因此|所以|"
+                       "本文|これ|それ|この|その|本|教科書|記述|説明|一致|とおり|通り|述べ|示し|定義|です|ます|して|いる|"
+                       "는|은|이|가|를|을|책|교과서|설명|정의|일치|내용|과|와|의|에서|다")
+_META_WORDS = set("""this that these those it its is are was be as the a an book text textbook chapter section author
+says say said states stated state matches match matched consistent agrees agree with what according to in of so given
+gives give defines defined definition explicitly clearly directly correct right true mentions mentioned page here there
+which statement described describes explains explained shown shows point points out just exactly also does do
+""".split())
+
+
+def says_nothing(claim: str) -> bool:
+    """True when an explanation only points at the book ("这与书中的表述相符", "This is what the book says") and
+    names nothing of what the book says. CJK text: under 4 characters or under 40% of it left once the words that
+    point at the book are removed; other scripts: fewer than 2 content words left."""
+    text = strip_citations(claim)
+    cjk = _CJK_RUN.findall(text)
+    n_cjk = sum(len(r) for r in cjk)
+    if n_cjk and n_cjk >= len(re.findall(r"[^\W\d_]", text)) / 2:
+        left = sum(len(_META_CJK.sub("", r)) for r in cjk)
+        return left < 4 or left < 0.4 * n_cjk
+    words = [w.lower() for w in re.findall(r"[^\W\d_]+", text)]
+    return len([w for w in words if len(w) >= 3 and w not in _META_WORDS]) < 2
 
 
 def _similarity(a: str, b: str) -> float:

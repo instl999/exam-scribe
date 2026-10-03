@@ -868,6 +868,13 @@ def _check_worksheet(ws: Workspace, task: Task) -> CheckResult:
     if fixed != text:
         write_text(path, fixed)
     doc = parse(fixed, path)
+    originals = meta.get("originals", {})
+    writable = [f for b in doc.blocks for f in b.fields if f.key not in originals.get(b.id, {})]
+    if writable and all(PLACEHOLDER_RE.search(f.value) for f in writable):
+        # a fresh worksheet nobody has filled yet (the previous card passed and made it): not a failed attempt
+        return CheckResult(False, f"NOT STARTED — the previous step passed and this worksheet is new: {path}. Fill "
+                                  "it in as the card says; this check did not use an attempt.\n\n" +
+                           render_card(ws, task))
     res = lint_worksheet(doc, meta.get("originals", {}), meta.get("kind"))
     attempts = ws.state.setdefault("attempts", {})
     note = ("Auto-fixed: " + "; ".join(notes) + "\n") if notes else ""

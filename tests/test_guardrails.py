@@ -163,6 +163,41 @@ class QuoteLengthTests(unittest.TestCase):
         self.assertTrue(quote_long_enough("energy is the capacity"))
 
 
+class EmptyExplanationTests(unittest.TestCase):
+    def test_why_that_only_points_at_the_book(self):
+        from examscribe_lib.lint import says_nothing
+        # rejected by a strict checker in the gpt-6-sol trial; a lenient checker let such lines through
+        for empty in ("这与书中的表述相符。", "这与书中的表述一致。", "书中给出这一基本定义。", "这是书中对人内传播的定义。",
+                      "This matches what the book says.", "The book says so."):
+            self.assertTrue(says_nothing(empty), empty)
+        for real in ("课本明确指出传播学的交叉性质。", "传播学是一门交叉学科，与新闻学、社会学等学科联系密切。",
+                     "因为能量守恒。", "Energy is the capacity to do work, so a falling object can do work.",
+                     "Heat flows from the hotter body to the colder one."):
+            self.assertFalse(says_nothing(real), real)
+
+
+class UntouchedWorksheetTests(unittest.TestCase):
+    def test_check_on_a_fresh_worksheet_costs_no_attempt(self):
+        from examscribe_lib.pipeline import check, compute_next
+        ws = helpers.new_workspace()
+        try:
+            for _ in range(40):                       # write every section, then reach the first worksheet
+                task = compute_next(ws)
+                if task.kind == "verify-claims":
+                    break
+                if task.kind in ("write-section", "write-chapter"):
+                    helpers.install_draft(ws, task.chapter, task.edit.name)
+                self.assertTrue(check(ws).ok or task.kind == "notify")
+            self.assertEqual(task.kind, "verify-claims")
+            res = check(ws)
+            self.assertIn("NOT STARTED", res.text)
+            self.assertNotIn(task.id, ws.state.get("attempts", {}))
+            helpers.oracle_fill(ws)                   # a filled worksheet is judged as usual
+            self.assertNotIn("NOT STARTED", check(ws).text)
+        finally:
+            helpers.cleanup(ws)
+
+
 class SkeletonTests(unittest.TestCase):
     def test_instruction_comments_are_not_placeholders(self):
         # the draft's own instructions must not trip the unfilled-placeholder check (every model hit it)
